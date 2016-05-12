@@ -3,15 +3,31 @@ MAINTAINER Vojtech Bartos <docker@vojtechbartos.com>
 
 # Install modules
 RUN apt-get update \
-    && apt-get install -y git zlib1g-dev \
+    && apt-get install -y git zlib1g-dev nodejs npm \
+    && npm install -g bower gulp-cli \
     && docker-php-ext-install mysqli \
     && docker-php-ext-install bcmath \
     && docker-php-ext-install mbstring \
     && docker-php-ext-install zip
 
+ENV COMPOSER_VERSION 1.0.1
+
+RUN php -r "readfile('https://getcomposer.org/installer');" > /tmp/composer-setup.php \
+    && php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer --version=${COMPOSER_VERSION} \
+    && rm -rf /tmp/composer-setup.php
+
 WORKDIR /var/www/project
 
-RUN php -r "readfile('https://getcomposer.org/installer');" | php
-RUN mv composer.phar /usr/local/bin/composer
+CMD composer install --ansi \
+    && echo "**************************************" \
+    && echo "NPM:" \
+    && npm install \
+    && echo "**************************************" \
+    && echo "BOWER:" \
+    && bower install \
+    && echo "**************************************" \
+    && echo "GULP:" \
+    && gulp default
 
-CMD ["composer", "install"]
+#CMD ["-"]
+#ENTRYPOINT ["composer", "--ansi"]
